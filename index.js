@@ -1,14 +1,16 @@
 const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
 // INITIATE EXPRESS SERVER
 const app = express();
 // Default on port 3000
-const PORT = 3000;
+const PORT = 3001;
 
 const apiRouter = require("./routes/api");
-const userRouter = require("./routes/user");
 
 app.use(express.json());
+app.use(cors());
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -21,8 +23,6 @@ app.get("/", (req, res) => {
 
 // Example route - All requests that go to http://localhost:3000/api go to apiRouter
 app.use("/api", apiRouter);
-// Example route - All requests that go to http://localhost:3000/user go to userRouter
-app.use("/user", userRouter);
 
 /*
 GLOBAL ERROR HANDLER
