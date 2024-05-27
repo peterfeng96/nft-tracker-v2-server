@@ -3,13 +3,14 @@ const { createClient } = require("@supabase/supabase-js");
 const { Web3 } = require("web3");
 require("dotenv").config();
 
+// WEB3
 const web3 = new Web3();
 
+// ALCHEMY API WEBSOCKET
 const settings = {
   apiKey: process.env.ALCHEMY_API_KEY, // Replace with your Alchemy API Key.
   network: Network.ETH_MAINNET, // Replace with your network.
 };
-// ALCHEMY API WEBSOCKET
 const alchemy = new Alchemy(settings);
 
 // SUBABASE CLIENT
@@ -26,30 +27,33 @@ const transfer_topic =
 // ADDS NEW EVENT LISTENER ALCHEMY WEBSOCKET
 const handleInserts = (payload) => {
   console.log("Change received!", payload);
-  const contract_address = payload.new.address;
+  const contractAddress = payload.new.address;
   // Returns if new address is already in set of unique addresses
-  if (uniqueAddresses.has(contract_address)) return;
+  if (uniqueAddresses.has(contractAddress)) return;
 
-  params = { address: contract_address, topics: [transfer_topic] };
+  params = { address: contractAddress, topics: [transfer_topic] };
   alchemy.ws.on(params, (txn) => handleTransaction(txn));
 };
 
 async function handleTransaction(txn) {
   console.log(txn);
-  const { contractAddress, transactionHash, topics } = txn;
+  // PARSING AND DECODING TRANSACTION DATA
+  const { address, transactionHash, topics } = txn;
   const fromAddress = web3.eth.abi.decodeParameter("address", topics[1]);
   const toAddress = web3.eth.abi.decodeParameter("address", topics[2]);
-  const tokenId = web3.eth.abi.decodeParameter("int", topics[3]);
+  const tokenId = Number(web3.eth.abi.decodeParameter("int", topics[3]));
   console.log(
     `from: ${fromAddress} // to: ${toAddress} // tokenId: ${tokenId}`
   );
-  supabase.from("transfer_transactions").insert({
-    contract_address: contractAddress,
+  // INSERTING TRANSACTION DATA INTO SUPABASE DB
+  const x = await supabase.from("transfer_transactions").insert({
+    contract_address: address,
     transaction_hash: transactionHash,
     from_address: fromAddress,
     to_address: toAddress,
     token_id: tokenId,
   });
+  console.log(x);
 }
 
 // ONLY ON START UP
